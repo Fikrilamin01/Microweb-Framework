@@ -66,6 +66,9 @@ public final class App {
                 // Initialize firebase storage
                 Bucket bucket = StorageClient.getInstance(FirebaseApp.getInstance()).bucket();
 
+                // Initialize gson
+                Gson gson = new Gson();
+
                 // This code to support file format uploaded from postman
                 MultipartConfigElement multipartConfigElement = new MultipartConfigElement("public/images");
                 req.raw().setAttribute("org.eclipse.jetty.multipartConfig",
@@ -128,7 +131,9 @@ public final class App {
                     fileNames.add(req.raw().getPart("file").getSubmittedFileName());
                     fileContentTypes.add(initialUploadedContentType);
                 } else {
-                    // return error
+                    response = new MyResponse("400",
+                            "The uploaded file is not zip file or an image");
+                    return gson.toJson(response);
                 }
 
                 // Later can change to unit test because this is not client fault, it was
@@ -140,7 +145,7 @@ public final class App {
                     System.out.println("Something error happen, the length is not consistent throughout the list");
                     response = new MyResponse("400",
                             "Something error happen, the length is not consistent throughout the list");
-                    return response;
+                    return gson.toJson(response);
                 }
 
                 System.out.println(inputStreams.size());
@@ -203,10 +208,10 @@ public final class App {
                         // add hashmap into the list
                         hmDataList.add(data);
                     } else {
-                        Blob blob = bucket.create(folderName + "/" + fileNames.get(i), inputStreams.get(i),
+                        Blob blob3 = bucket.create(folderName + "/" + fileNames.get(i), inputStreams.get(i),
                                 fileContentTypes.get(i));
                         // Get a URL for the uploaded file
-                        String url = blob.getMediaLink();
+                        String url = blob3.getMediaLink();
                         data.put("imageName", fileNames.get(i));
                         data.put("URL", url);
                         hmDataList.add(data);
@@ -215,7 +220,6 @@ public final class App {
                 }
 
                 // Convert to JSON
-                Gson gson = new Gson();
                 response = new MyResponse("200", "success", hmDataList);
                 return gson.toJsonTree(response);
             } catch (Exception e) {
